@@ -53,12 +53,9 @@ public class sql {
 			if (rs.next()) {
 				int rows = rs.getInt("numofrows");
 				int cols = rs.getInt("numofcolumns");
-				int starthour = rs.getInt("starthour");
-				int startminute = rs.getInt("startminute");
-				int endhour = rs.getInt("endhour");
-				int endminute = rs.getInt("endminute");
 				int active = rs.getInt("active");
-				return new Classroom(name, rows, cols, starthour, startminute, endhour, endminute, active);
+				String year = rs.getString("year");
+				return new Classroom(name, rows, cols, active, year);
 			} else {
 				return null;
 			}
@@ -92,13 +89,17 @@ public class sql {
 
 	// get a student from student id
 	public Student getStudent(int id) {
-		String query = "select name from student where id =" + id;
+		String query = "select * from student where id =" + id;
 		try {
 			this.stmt = c.createStatement();
 			ResultSet rs = null;
 			rs = stmt.executeQuery(query);
 			if (rs.next()) {
-				return new Student(rs.getString("name"));
+				String name = rs.getString("name");
+				String year = rs.getString("year");
+				String img = rs.getString("img");
+				int exchange = rs.getInt("exchange");
+				return new Student(name, img, year, exchange);
 			} else {
 				return null;
 			}
@@ -128,11 +129,14 @@ public class sql {
 	}
 
 	// create student
-	public boolean createStudent(String name) {
-		String query = "insert into student (name)\r\n" + "values ('" + name + "')";
-		try {
-			this.stmt = c.createStatement();
-			stmt.executeUpdate(query);
+	public boolean createStudent(String name, String img, String year, boolean exchange) {
+		String query = "insert into student (name, img, year, exchange)\r\n" + "values (?, ?, ?, ?)";
+		try (PreparedStatement pstmt = c.prepareStatement(query)) {
+			pstmt.setString(1, name);
+			pstmt.setString(2, img);
+			pstmt.setString(3, year);
+			pstmt.setBoolean(4, exchange);
+			pstmt.executeUpdate();
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -161,17 +165,12 @@ public class sql {
 	}
 
 	// create class
-	public boolean createClass(String name, int row, int col, int starthour, int startminute, int endhour, int endminute) {
-		String query = "insert into Class (name, numofrows, numofcolumns, starthour, startminute, endhour, endminute)\r\n"
-				+ "values (?, ?, ?, ?, ?, ?, ?)";
+	public boolean createClass(String name, int row, int col) {
+		String query = "insert into Class (name, numofrows, numofcolumns)\r\n" + "values (?, ?, ?)";
 		try (PreparedStatement pstmt = c.prepareStatement(query)) {
 			pstmt.setString(1, name);
 			pstmt.setInt(2, row);
 			pstmt.setInt(3, col);
-			pstmt.setInt(4, starthour);
-			pstmt.setInt(5, startminute);
-			pstmt.setInt(6, endhour);
-			pstmt.setInt(7, endminute);
 			pstmt.executeUpdate();
 			return true;
 		} catch (Exception e) {
@@ -180,9 +179,23 @@ public class sql {
 		}
 	}
 
-	// activate, or deactivate a class
-	public boolean updateClassSession(String name, int activate) {
-		String query = "update Class\r\n" + "set active=" + activate + "\r\n" + "where name='" + name + "'";
+	// activate a class
+	public boolean activateClass(String name, String year) {
+		String query = "update Class\r\n" + "set active = true, year = ?\r\n" + "where name = ?";
+		try (PreparedStatement pstmt = c.prepareStatement(query)) {
+			pstmt.setString(1, year);
+			pstmt.setString(2, name);
+			pstmt.executeUpdate();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	//deactivate a class
+	public boolean deactivateClass(String name) {
+		String query = "update Class set active = false, year = null where name = '" + name + "'";
 		try {
 			this.stmt = c.createStatement();
 			stmt.executeUpdate(query);
@@ -192,6 +205,7 @@ public class sql {
 			return false;
 		}
 	}
+
 
 	// check if class is active
 	public boolean classIsOn(String name) {

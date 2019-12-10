@@ -1,11 +1,11 @@
 package vgu.vgu;
 
 public class State {
-	int id;
-	String className;
-	int row;
-	int col;
-	int student;
+	private int id;
+	private String className;
+	private int row;
+	private int col;
+	private int student;
 	
 	public State(int row, int col, int student) {
 		this.row = row;

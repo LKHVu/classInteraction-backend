@@ -73,21 +73,34 @@ public class Controller {
 		return result;
 	}
 
-	// activate, or deactivate a class
+	// activate a class
 	@CrossOrigin 
 	@PutMapping("/activeclass")
+	public Map<String, String> updateUser(@RequestParam(value = "name") String name, @RequestParam(value = "year") String year) {
+		sql s = new sql();
+		HashMap<String, String> map = new HashMap<String, String>();
+		if (s.activateClass(name, year)) {
+			map.put("Success", "Activated class successfully");
+		}
+		else {
+			map.put("Failed", "Can't activate class");
+		}
+		s.closeConnection();
+		return map;
+	}
+	
+	//deactivate a class
+	@CrossOrigin 
+	@PutMapping("/deactivateclass")
 	public Map<String, String> updateUser(@RequestParam(value = "name") String name) {
 		sql s = new sql();
-		int active = 1;
-		if (s.classIsOn(name)) {
-			active = 0;
-			s.cleanState(name);
-		}
+		s.cleanState(name);
 		HashMap<String, String> map = new HashMap<String, String>();
-		if (s.updateClassSession(name, active)) {
-			map.put("Success", "Changed class status successfully");
-		} else {
-			map.put("Failed", "Can't change class status");
+		if (s.deactivateClass(name)) {
+			map.put("Success", "Deactivated class successfully");
+		}
+		else {
+			map.put("Failed", "Can't deactivate class");
 		}
 		s.closeConnection();
 		return map;
@@ -104,7 +117,10 @@ public class Controller {
 			Map<String, String> json_map = mapper.readValue(json, new TypeReference<Map<String, String>>() {
 			});
 			String name = json_map.get("name");
-			if (s.createStudent(name)) {
+			String img = json_map.get("img");
+			String year = json_map.get("year");
+			boolean exchange = Boolean.parseBoolean(json_map.get("exchange"));
+			if (s.createStudent(name, img, year, exchange)) {
 				map.put("Success", "Created student successfully");
 			} else {
 				map.put("Failed", "Can't create student");
@@ -158,11 +174,7 @@ public class Controller {
 			String name = json_map.get("name");
 			int row = Integer.parseInt(json_map.get("row"));
 			int col = Integer.parseInt(json_map.get("col"));
-			int starthour = Integer.parseInt(json_map.get("starthour"));
-			int startminute = Integer.parseInt(json_map.get("startminute"));
-			int endhour = Integer.parseInt(json_map.get("endhour"));
-			int endminute = Integer.parseInt(json_map.get("endminute"));
-			if (s.createClass(name, row, col, starthour, startminute, endhour, endminute)) {
+			if (s.createClass(name, row, col)) {
 				map.put("Success", "Created class successfully");
 			} else {
 				map.put("Failed", "Can't create class");
