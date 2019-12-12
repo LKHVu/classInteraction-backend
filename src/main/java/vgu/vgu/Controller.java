@@ -63,7 +63,7 @@ public class Controller {
 		return result;
 	}
 
-	//get a student from student id
+	// get a student from student id
 	@CrossOrigin
 	@GetMapping("/student")
 	public Student getStudent(@RequestParam(value = "id") String id) {
@@ -74,23 +74,23 @@ public class Controller {
 	}
 
 	// activate a class
-	@CrossOrigin 
+	@CrossOrigin
 	@PutMapping("/activeclass")
-	public Map<String, String> updateUser(@RequestParam(value = "name") String name, @RequestParam(value = "year") String year) {
+	public Map<String, String> updateUser(@RequestParam(value = "name") String name,
+			@RequestParam(value = "year") String year) {
 		sql s = new sql();
 		HashMap<String, String> map = new HashMap<String, String>();
 		if (s.activateClass(name, year)) {
 			map.put("Success", "Activated class successfully");
-		}
-		else {
+		} else {
 			map.put("Failed", "Can't activate class");
 		}
 		s.closeConnection();
 		return map;
 	}
-	
-	//deactivate a class
-	@CrossOrigin 
+
+	// deactivate a class
+	@CrossOrigin
 	@PutMapping("/deactivateclass")
 	public Map<String, String> updateUser(@RequestParam(value = "name") String name) {
 		sql s = new sql();
@@ -98,8 +98,7 @@ public class Controller {
 		HashMap<String, String> map = new HashMap<String, String>();
 		if (s.deactivateClass(name)) {
 			map.put("Success", "Deactivated class successfully");
-		}
-		else {
+		} else {
 			map.put("Failed", "Can't deactivate class");
 		}
 		s.closeConnection();
@@ -187,4 +186,180 @@ public class Controller {
 		return map;
 	}
 
+	// create a multiple choice answer
+	@CrossOrigin
+	@PostMapping("/createmultiplechoiceanswer")
+	public @ResponseBody HashMap<String, String> createMultipleChoiceAnswer(@RequestBody String json) {
+		sql s = new sql();
+		HashMap<String, String> map = new HashMap<String, String>();
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			Map<String, String> json_map = mapper.readValue(json, new TypeReference<Map<String, String>>() {
+			});
+			int questionId = Integer.parseInt(json_map.get("questionId"));
+			int studentId = Integer.parseInt(json_map.get("studentId"));
+			String answer = json_map.get("answer");
+			if (s.createMultipleChoiceAnswer(questionId, studentId, answer)) {
+				map.put("Success", "Created answer successfully");
+			} else {
+				map.put("Failed", "Can't create answer");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			map.put("Failed", "Can't create answer");
+		}
+		s.closeConnection();
+		return map;
+	}
+
+	// create a multiple choice question
+	@CrossOrigin
+	@PostMapping("/createmultiplechoicequestion")
+	public @ResponseBody HashMap<String, String> createMultipleChoiceQuestion(@RequestBody String json) {
+		sql s = new sql();
+		HashMap<String, String> map = new HashMap<String, String>();
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			Map<String, String> json_map = mapper.readValue(json, new TypeReference<Map<String, String>>() {
+			});
+			String name = json_map.get("name");
+			String className = json_map.get("className");
+			String question = json_map.get("question");
+			String A = json_map.get("A");
+			String B = json_map.get("B");
+			String C = json_map.get("C");
+			String D = json_map.get("D");
+			int time = Integer.parseInt(json_map.get("time"));
+			String solution = json_map.get("solution");
+			if (s.createMultipleChoiceQuestion(name, className, question, A, B, C, D, time, solution)) {
+				map.put("Success", "Created question successfully");
+			} else {
+				map.put("Failed", "Can't create question");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			map.put("Failed", "Can't create question");
+		}
+		s.closeConnection();
+		return map;
+	}
+
+	// find out the average of a class
+	@CrossOrigin
+	@GetMapping("/average")
+	public @ResponseBody HashMap<String, String> getAverage(@RequestParam(value = "questionid") String questionId) {
+		sql s = new sql();
+		HashMap<String, String> map = new HashMap<String, String>();
+		int qId = Integer.parseInt(questionId);
+		Integer right = s.countAnswers(qId, "right");
+		Integer wrong = s.countAnswers(qId, "wrong");
+		Integer no = s.countAnswers(qId, "no");
+		Integer total = right + wrong + no;
+		map.put("right", right + "/" + total);
+		map.put("wrong", wrong + "/" + total);
+		map.put("no", no + "/" + total);
+		s.closeConnection();
+		return map;
+	}
+
+	// get all finished quizzes
+	@CrossOrigin
+	@GetMapping("/finishedquestion")
+	public List<MultipleChoiceQuestion> getFinishedQuestions(@RequestParam(value = "className") String className) {
+		sql s = new sql();
+		List<MultipleChoiceQuestion> result = s.getQuestions(className, "finished");
+		s.closeConnection();
+		return result;
+	}
+
+	// get all quiz done of a student
+	@CrossOrigin
+	@GetMapping("/quizdone")
+	public List<MultipleChoiceQuestion> getDoneQuestions(@RequestParam(value = "studentid") String studentId) {
+		sql s = new sql();
+		List<MultipleChoiceQuestion> result = s.getQuestionsDoneByAStudent(Integer.parseInt(studentId));
+		s.closeConnection();
+		return result;
+	}
+
+	// get all active quizzes
+	@CrossOrigin
+	@GetMapping("/activequestion")
+	public List<MultipleChoiceQuestion> getActiveQuestions(@RequestParam(value = "className") String className) {
+		sql s = new sql();
+		List<MultipleChoiceQuestion> result = s.getQuestions(className, "active");
+		s.closeConnection();
+		return result;
+	}
+
+	// get name of a quiz
+	@CrossOrigin
+	@GetMapping("/questionname")
+	public @ResponseBody HashMap<String, String> getName(@RequestParam(value = "questionid") String questionId) {
+		sql s = new sql();
+		HashMap<String, String> map = new HashMap<String, String>();
+		map.put("name", s.getQuestionName(Integer.parseInt(questionId)));
+		s.closeConnection();
+		return map;
+	}
+
+	// activate a quiz
+	@CrossOrigin
+	@PostMapping("/activequiz")
+	public void activateQuiz(@RequestParam(value = "questionid") String questionId) throws InterruptedException {
+		sql s = new sql();
+		int qId = Integer.parseInt(questionId);
+		Integer time = s.getQuestionTime(qId);
+		s.activateQuestion(qId);
+		while (time > 0) {
+			Thread.sleep(1000);
+			s.decreaseTime(qId);
+			time = time - 1;
+		}
+		s.finishQuestion(qId);
+		s.createNoAnswer(qId);
+		s.closeConnection();
+	}
+
+	// get inactive quizzes
+	@CrossOrigin
+	@GetMapping("/inactivequiz")
+	public List<MultipleChoiceQuestion> getInactiveQuestions(@RequestParam(value = "className") String className) {
+		sql s = new sql();
+		List<MultipleChoiceQuestion> result = s.getQuestions(className, "inactive");
+		s.closeConnection();
+		return result;
+	}
+
+	// get question
+	@CrossOrigin
+	@GetMapping("/question")
+	public MultipleChoiceQuestion getQuestion(@RequestParam(value = "questionid") String questionId) {
+		sql s = new sql();
+		MultipleChoiceQuestion result = s.getQuestion(Integer.parseInt(questionId));
+		s.closeConnection();
+		return result;
+	}
+
+	// get time for a quiz
+	@CrossOrigin
+	@GetMapping("/quiztime")
+	public @ResponseBody HashMap<String, Integer> getTime(@RequestParam(value = "questionid") String questionId) {
+		sql s = new sql();
+		HashMap<String, Integer> map = new HashMap<String, Integer>();
+		map.put("time", s.getQuestionTime(Integer.parseInt(questionId)));
+		s.closeConnection();
+		return map;
+	}
+
+	// get quiz review
+	@CrossOrigin
+	@GetMapping("/quizreview")
+	public QuizReview getReview(@RequestParam(value = "questionid") String questionId,
+			@RequestParam(value = "studentid") String studentId) {
+		sql s = new sql();
+		QuizReview result = s.getReview(Integer.parseInt(questionId), Integer.parseInt(studentId));
+		s.closeConnection();
+		return result;
+	}
 }
