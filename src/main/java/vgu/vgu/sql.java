@@ -10,6 +10,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -145,10 +146,10 @@ public class sql {
 	}
 
 	// create state
-	public boolean createState(String className, int row, int col, int student) {
+	public String createState(String className, int row, int col, int student) {
 		String query = "insert into state (className, rownum, colnum, studentId)\r\n" + "values (?, ?, ?, ?)";
 		if (!classIsOn(className)) {
-			return false;
+			return "Class is off";
 		} else {
 			try (PreparedStatement pstmt = c.prepareStatement(query)) {
 				pstmt.setString(1, className);
@@ -156,10 +157,13 @@ public class sql {
 				pstmt.setInt(3, col);
 				pstmt.setInt(4, student);
 				pstmt.executeUpdate();
-				return true;
-			} catch (Exception e) {
+				return "Seat is taken successfully";
+			} catch (SQLIntegrityConstraintViolationException ex) {
+				return "Seat is occupied already";
+			}
+			catch (Exception e) {
 				e.printStackTrace();
-				return false;
+				return "Can't take seat";
 			}
 		}
 	}

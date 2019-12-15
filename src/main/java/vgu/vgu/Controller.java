@@ -21,8 +21,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.text.ParseException;
 import java.util.*;
+
+import javax.servlet.http.HttpServletResponse;
+
 import org.json.JSONException;
 
 /**
@@ -135,7 +139,7 @@ public class Controller {
 	// create a state
 	@CrossOrigin
 	@PostMapping("/createstate")
-	public @ResponseBody HashMap<String, String> createState(@RequestBody String json) {
+	public @ResponseBody HashMap<String, String> createState(@RequestBody String json, HttpServletResponse response) {
 		System.out.println(json);
 		sql s = new sql();
 		HashMap<String, String> map = new HashMap<String, String>();
@@ -147,14 +151,10 @@ public class Controller {
 			int row = Integer.parseInt(json_map.get("row"));
 			int col = Integer.parseInt(json_map.get("col"));
 			int student = Integer.parseInt(json_map.get("student"));
-			if (s.createState(classname, row, col, student)) {
-				map.put("Success", "Created state successfully");
-			} else {
-				map.put("Failed", "Can't create state");
-			}
+			map.put("Result", s.createState(classname, row, col, student));
 		} catch (Exception e) {
 			e.printStackTrace();
-			map.put("Failed", "Can't create state");
+			map.put("Result", "Can't take seat");
 		}
 		s.closeConnection();
 		return map;

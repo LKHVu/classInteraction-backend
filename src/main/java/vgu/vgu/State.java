@@ -1,7 +1,6 @@
 package vgu.vgu;
 
 public class State {
-	private int id;
 	private String className;
 	private int row;
 	private int col;
@@ -13,10 +12,7 @@ public class State {
 		this.student = student;
 	}
 	
-	public int getId() {
-		return id;
-	}
-	
+
 	public String getClassName() {
 		return className;
 	}
