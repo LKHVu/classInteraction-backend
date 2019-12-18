@@ -121,7 +121,7 @@ public class Controller {
 			});
 			String name = json_map.get("name");
 			String img = json_map.get("img");
-			String year = json_map.get("year");
+			String year = json_map.get("year");	
 			boolean exchange = Boolean.parseBoolean(json_map.get("exchange"));
 			if (s.createStudent(name, img, year, exchange)) {
 				map.put("Success", "Created student successfully");
@@ -359,6 +359,16 @@ public class Controller {
 			@RequestParam(value = "studentid") String studentId) {
 		sql s = new sql();
 		QuizReview result = s.getReview(Integer.parseInt(questionId), Integer.parseInt(studentId));
+		s.closeConnection();
+		return result;
+	}
+	
+	// get answers by seat
+	@CrossOrigin
+	@GetMapping("/answerbyseat")
+	public List<AnswerBySeat> getAnswersBySeat(@RequestParam(value = "questionid") String questionId) {
+		sql s = new sql();
+		List<AnswerBySeat> result = s.getAnswersBySeat(Integer.parseInt(questionId));
 		s.closeConnection();
 		return result;
 	}

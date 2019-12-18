@@ -160,8 +160,7 @@ public class sql {
 				return "Seat is taken successfully";
 			} catch (SQLIntegrityConstraintViolationException ex) {
 				return "Seat is occupied already";
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				return "Can't take seat";
 			}
@@ -283,7 +282,8 @@ public class sql {
 
 	// count how many right, wrong, or no answers
 	public Integer countAnswers(int questionId, String choice) {
-		String query = "select count(*) as count from (\r\n" + "select a.id from MultipleChoiceQuestion q\r\n"
+		String query = "select count(*) as count from (\r\n"
+				+ "select a.questionId, a.studentId from MultipleChoiceQuestion q\r\n"
 				+ "join MultipleChoiceAnswer a on q.id = a.questionid\r\n" + "where q.id = " + questionId;
 		if (choice.equals("right")) {
 			query += " and q.answer=a.answer) b";
@@ -546,6 +546,32 @@ public class sql {
 			} else {
 				return null;
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// get answer by seat during the test
+	public List<AnswerBySeat> getAnswersBySeat(int questionId) {
+		String query = "select stu.name, stu.img, s.rownum, s.colnum, a.answer, q.answer as solution from MultipleChoiceAnswer a\r\n"
+				+ "join state s using (studentId)\r\n" + "join MultipleChoiceQuestion q on a.questionId = q.id \r\n"
+				+ "join student stu on a.studentId = stu.id\r\n" + "where questionId=" + questionId;
+		List<AnswerBySeat> result = new ArrayList<AnswerBySeat>();
+		try {
+			this.stmt = c.createStatement();
+			ResultSet rs = null;
+			rs = stmt.executeQuery(query);
+			while (rs.next()) {
+				String name = rs.getString("name");
+				String img = rs.getString("img");
+				int row = rs.getInt("rownum");
+				int col = rs.getInt("colnum");
+				String answer = rs.getString("answer");
+				String solution = rs.getString("solution");
+				result.add(new AnswerBySeat(name, img, row, col, answer, solution));
+			}
+			return result;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
