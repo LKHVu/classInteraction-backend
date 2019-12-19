@@ -17,6 +17,11 @@ public class AnswerBySeat {
 		this.solution = solution;
 	}
 	
+	public AnswerBySeat(int row, int col) {
+		this.row = row;
+		this.col = col;
+	}
+	
 	public String getName() {
 		return name;
 	}

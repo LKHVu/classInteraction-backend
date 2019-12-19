@@ -577,4 +577,96 @@ public class sql {
 			return null;
 		}
 	}
+
+	// check if that class is having an attention call of not
+	public Boolean thereIsACall(String className) {
+		String query = "select * from state\r\n" + "where attention = true\r\n" + "and className ='" + className + "'";
+		try {
+			this.stmt = c.createStatement();
+			ResultSet rs = null;
+			rs = stmt.executeQuery(query);
+			if (rs.next()) {
+				return true;
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// check what student is in what class
+	public String getClassName(int studentId) {
+		String query = "select className from state where studentId =" + studentId;
+		try {
+			this.stmt = c.createStatement();
+			ResultSet rs = null;
+			rs = stmt.executeQuery(query);
+			if (rs.next()) {
+				return rs.getString("className");
+			} else {
+				return null;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// set mode of attention
+	public String setAttention(boolean choice, int studentId) {
+		if (thereIsACall(getClassName(studentId)) && choice) {
+			return "There is already a call from another student. Please wait";
+		} else {
+			String query = "update state\r\n" + "set attention=?\r\n" + "where studentId=?";
+			try (PreparedStatement pstmt = c.prepareStatement(query)) {
+				pstmt.setBoolean(1, choice);
+				pstmt.setInt(2, studentId);
+				pstmt.executeUpdate();
+				if (choice) {
+					return "You are now calling for attention";
+				} else {
+					return "Attention call canceled";
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+				if (choice) {
+					return "Can't call for attention";
+				} else {
+					return "Can't cancel attention call";
+				}
+
+			}
+		}
+
+	}
+
+	// which students are calling for attention
+	public int[] checkAttention(String className) {
+		String query = "select rownum, colnum, studentId from state where attention=true and className='" + className + "'";
+		int[] result = new int[3];
+		try {
+			this.stmt = c.createStatement();
+			ResultSet rs = null;
+			rs = stmt.executeQuery(query);
+			if (rs.next()) {
+				result[0] = rs.getInt("rownum");
+				result[1] = rs.getInt("colnum");
+				result[2] = rs.getInt("studentId");
+			} else {
+				result[0] = 0;
+				result[1] = 0;
+				result[2] = 0;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			result[0] = 0;
+			result[1] = 0;
+			result[2] = 0;
+		}
+		return result;
+	}
+
 }

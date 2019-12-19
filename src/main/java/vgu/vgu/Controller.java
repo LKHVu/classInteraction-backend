@@ -121,7 +121,7 @@ public class Controller {
 			});
 			String name = json_map.get("name");
 			String img = json_map.get("img");
-			String year = json_map.get("year");	
+			String year = json_map.get("year");
 			boolean exchange = Boolean.parseBoolean(json_map.get("exchange"));
 			if (s.createStudent(name, img, year, exchange)) {
 				map.put("Success", "Created student successfully");
@@ -362,7 +362,7 @@ public class Controller {
 		s.closeConnection();
 		return result;
 	}
-	
+
 	// get answers by seat
 	@CrossOrigin
 	@GetMapping("/answerbyseat")
@@ -371,5 +371,37 @@ public class Controller {
 		List<AnswerBySeat> result = s.getAnswersBySeat(Integer.parseInt(questionId));
 		s.closeConnection();
 		return result;
+	}
+
+	// set attention for a student
+	@CrossOrigin
+	@PutMapping("/setattention")
+	public Map<String, String> setAttention(@RequestParam(value = "turn") String turn,
+			@RequestParam(value = "studentid") String studentId) {
+		sql s = new sql();
+		HashMap<String, String> map = new HashMap<String, String>();
+		Boolean choice = null;
+		if (turn.equals("on")) {
+			choice=true;
+		} else if (turn.equals("off")) {
+			choice=false;
+		}
+		map.put("Result", s.setAttention(choice, Integer.parseInt(studentId)));
+		s.closeConnection();
+		return map;
+	}
+	
+	// which students are calling for attention
+	@CrossOrigin
+	@GetMapping("/checkattention")
+	public Map<String, Integer> checkAttention(@RequestParam(value = "classname") String className) {
+		sql s = new sql();
+		int[] result = s.checkAttention(className);
+		HashMap<String, Integer> map = new HashMap<String, Integer>();
+		map.put("row", result[0]);
+		map.put("col", result[1]);
+		map.put("studentId", result[2]);
+		s.closeConnection();
+		return map;
 	}
 }
