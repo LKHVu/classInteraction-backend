@@ -19,6 +19,8 @@ public class Config {
     private String dbUserName;
     private String dbPassword;
     private String logFile;
+    
+    private String secret;
 
     public String getDbServer() {
         return this.dbServer;
@@ -43,6 +45,10 @@ public class Config {
     public String getLogFile() {
         return this.logFile;
     }
+    
+    public String getSecret() {
+    	return this.secret;
+    }
 
     private Config() {
         FileInputStream file = null;
@@ -57,6 +63,7 @@ public class Config {
             this.dbUserName = prop.getProperty("dbUserName");
             this.dbPassword = prop.getProperty("dbPassword");
             this.logFile = prop.getProperty("logFile");
+            this.secret = prop.getProperty("secret");
             return;
         } catch (IOException e) {
             System.out.println("Failed to read config file.");

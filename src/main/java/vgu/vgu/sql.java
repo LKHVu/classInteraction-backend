@@ -16,6 +16,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONObject;
+
 public class sql {
 
 	Connection c = null;
@@ -89,8 +91,8 @@ public class sql {
 	}
 
 	// get a student from student id
-	public Student getStudent(int id) {
-		String query = "select * from student where id =" + id;
+	public User getStudent(int id) {
+		String query = "select * from users where id =" + id;
 		try {
 			this.stmt = c.createStatement();
 			ResultSet rs = null;
@@ -100,7 +102,7 @@ public class sql {
 				String year = rs.getString("year");
 				String img = rs.getString("img");
 				int exchange = rs.getInt("exchange");
-				return new Student(name, img, year, exchange);
+				return new User(name, img, year, exchange);
 			} else {
 				return null;
 			}
@@ -130,13 +132,17 @@ public class sql {
 	}
 
 	// create student
-	public boolean createStudent(String name, String img, String year, boolean exchange) {
-		String query = "insert into student (name, img, year, exchange)\r\n" + "values (?, ?, ?, ?)";
+	public boolean createStudent(String name, String img, String year, boolean exchange, String login,
+			String password) {
+		String query = "insert into users (name, img, year, exchange, login, password, role)\r\n"
+				+ "values (?, ?, ?, ?, ?, ?, 3)";
 		try (PreparedStatement pstmt = c.prepareStatement(query)) {
 			pstmt.setString(1, name);
 			pstmt.setString(2, img);
 			pstmt.setString(3, year);
 			pstmt.setBoolean(4, exchange);
+			pstmt.setString(5, login);
+			pstmt.setString(6, password);
 			pstmt.executeUpdate();
 			return true;
 		} catch (Exception e) {
@@ -441,7 +447,7 @@ public class sql {
 	// find the student Ids who did not answer the question
 	public List<Integer> findStudentsWhoDidNotAnswer(int questionId) {
 		String className = findClassForAQuestion(questionId);
-		String query = "select id from student\r\n" + "where id in (\r\n" + "select studentId from state\r\n"
+		String query = "select id from users\r\n" + "where id in (\r\n" + "select studentId from state\r\n"
 				+ "where className = ?)\r\n" + "and id not in (\r\n" + "select studentId from MultipleChoiceAnswer\r\n"
 				+ "where questionId = ?)";
 		List<Integer> result = new ArrayList<Integer>();
@@ -556,7 +562,7 @@ public class sql {
 	public List<AnswerBySeat> getAnswersBySeat(int questionId) {
 		String query = "select stu.name, stu.img, s.rownum, s.colnum, a.answer, q.answer as solution from MultipleChoiceAnswer a\r\n"
 				+ "join state s using (studentId)\r\n" + "join MultipleChoiceQuestion q on a.questionId = q.id \r\n"
-				+ "join student stu on a.studentId = stu.id\r\n" + "where questionId=" + questionId;
+				+ "join users stu on a.studentId = stu.id\r\n" + "where questionId=" + questionId;
 		List<AnswerBySeat> result = new ArrayList<AnswerBySeat>();
 		try {
 			this.stmt = c.createStatement();
@@ -615,37 +621,40 @@ public class sql {
 	}
 
 	// set mode of attention
-	public String setAttention(boolean choice, int studentId) {
-		if (thereIsACall(getClassName(studentId)) && choice) {
+	public String callForAttention(int studentId) {
+		if (thereIsACall(getClassName(studentId))) {
 			return "There is already a call from another student. Please wait";
 		} else {
-			String query = "update state\r\n" + "set attention=?\r\n" + "where studentId=?";
+			String query = "update state\r\n" + "set attention=true\r\n" + "where studentId=?";
 			try (PreparedStatement pstmt = c.prepareStatement(query)) {
-				pstmt.setBoolean(1, choice);
-				pstmt.setInt(2, studentId);
+				pstmt.setInt(1, studentId);
 				pstmt.executeUpdate();
-				if (choice) {
-					return "You are now calling for attention";
-				} else {
-					return "Attention call canceled";
-				}
+				return "You are now calling for attention";
 
 			} catch (Exception e) {
 				e.printStackTrace();
-				if (choice) {
-					return "Can't call for attention";
-				} else {
-					return "Can't cancel attention call";
-				}
+				return "Can't call for attention";
 
 			}
 		}
-
+	}
+	
+	public boolean closeAttention() {
+		String query = "update state set attention = false where attention = true";
+		try {
+			this.stmt = c.createStatement();
+			stmt.executeUpdate(query);
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	// which students are calling for attention
 	public int[] checkAttention(String className) {
-		String query = "select rownum, colnum, studentId from state where attention=true and className='" + className + "'";
+		String query = "select rownum, colnum, studentId from state where attention=true and className='" + className
+				+ "'";
 		int[] result = new int[3];
 		try {
 			this.stmt = c.createStatement();
@@ -667,6 +676,67 @@ public class sql {
 			result[2] = 0;
 		}
 		return result;
+	}
+
+	// check if the student is accepted or not
+	public boolean checkAccepted(int studentId) {
+		String query = "select accepted from state where studentId=" + studentId;
+		try {
+			this.stmt = c.createStatement();
+			ResultSet rs = null;
+			rs = stmt.executeQuery(query);
+			if (rs.next()) {
+				return rs.getBoolean("accepted");
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	// accept attention call
+	public boolean setAccepted(boolean choice) {
+		String query = "update state\r\n" + "set accepted=?\r\n" + "where attention=true";
+		try (PreparedStatement pstmt = c.prepareStatement(query)) {
+			pstmt.setBoolean(1, choice);
+			pstmt.executeUpdate();
+			if (choice) {
+				return true;
+			} else {
+				return false;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			if (choice) {
+				return false;
+			} else {
+				return false;
+			}
+		}
+	}
+
+	// generate payload for JWT
+	public JSONObject generatePayload(String login, String password) {
+		String query = "select id, role from users where login = '" + login + "' and password = '" + password + "'";
+		try {
+			this.stmt = c.createStatement();
+			ResultSet rs = null;
+			rs = stmt.executeQuery(query);
+			if (rs.next()) {
+				JSONObject payload = new JSONObject();
+				payload.put("id", rs.getInt("id"));
+				payload.put("role", rs.getInt("role"));
+				return payload;
+			} else {
+				return null;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 }
