@@ -153,6 +153,7 @@ public class sql {
 
 	// create state
 	public String createState(String className, int row, int col, int student) {
+		deleteSeat(student);
 		String query = "insert into state (className, rownum, colnum, studentId)\r\n" + "values (?, ?, ?, ?)";
 		if (!classIsOn(className)) {
 			return "Class is off";
@@ -170,6 +171,31 @@ public class sql {
 				e.printStackTrace();
 				return "Can't take seat";
 			}
+		}
+	}
+	
+	// delete seat of a student
+	public void deleteSeat(int student) {
+		String query = "select * from state where studentId=" + student;
+		try {
+			this.stmt = c.createStatement();
+			ResultSet rs = null;
+			rs = stmt.executeQuery(query);
+			if (rs.next()) {
+				deleteSeat_(student);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void deleteSeat_(int student) {
+		String query = "delete from state where studentId=" + student;
+		try {
+			this.stmt = c.createStatement();
+			stmt.executeUpdate(query);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
