@@ -666,7 +666,7 @@ public class sql {
 	}
 	
 	public boolean closeAttention() {
-		String query = "update state set attention = false where attention = true";
+		String query = "update state set attention = false, accepted = false where attention = true";
 		try {
 			this.stmt = c.createStatement();
 			stmt.executeUpdate(query);
